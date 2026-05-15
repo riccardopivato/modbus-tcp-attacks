@@ -1,0 +1,41 @@
+services:
+
+  slave:
+    build: ./testbed
+    container_name: modbus-slave
+    command: python modbus_server.py
+    networks:
+      modbus-net:
+        ipv4_address: 172.20.0.2
+
+  master:
+    build: ./testbed
+    container_name: modbus-master
+    command: python modbus_client.py
+    environment:
+      - SLAVE_IP=172.20.0.2
+      - SLAVE_PORT=502
+    depends_on:
+      - slave
+    networks:
+      modbus-net:
+        ipv4_address: 172.20.0.3
+
+  attacker:
+    build: ./attacks
+    container_name: modbus-attacker
+    command: sleep infinity
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      modbus-net:
+        ipv4_address: 172.20.0.4
+    tty: true
+
+networks:
+  modbus-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
